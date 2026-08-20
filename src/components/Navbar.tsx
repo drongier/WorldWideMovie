@@ -1,11 +1,25 @@
-import React, { useRef } from 'react';
-import { Globe, Search, Key, Download, Upload, Plus, Shuffle } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import {
+  Globe,
+  Search,
+  Key,
+  Download,
+  Upload,
+  Plus,
+  Shuffle,
+  User as UserIcon,
+  LogOut,
+  Cloud,
+  ChevronDown
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavbarProps {
   onOpenSearch: () => void;
   onOpenManualAdd: () => void;
   onOpenApiKeyModal: () => void;
   onOpenRandomCountry: () => void;
+  onOpenAuthModal: () => void;
   hasApiKey: boolean;
   onExport: () => void;
   onImport: (jsonStr: string) => void;
@@ -18,13 +32,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenManualAdd,
   onOpenApiKeyModal,
   onOpenRandomCountry,
+  onOpenAuthModal,
   hasApiKey,
   onExport,
   onImport,
   totalWatchedCountries,
   totalCountriesCount
 }) => {
+  const { user, signOut, loading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,6 +57,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     reader.readAsText(file);
     e.target.value = '';
   };
+
+  const handleSignOut = async () => {
+    setIsUserMenuOpen(false);
+    await signOut();
+  };
+
+  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : '?';
 
   return (
     <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
@@ -65,7 +89,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-
           {/* Center Search Bar Trigger */}
           <div className="flex-1 max-w-md mx-4 hidden md:block">
             <button
@@ -83,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-2.5">
             {/* Mobile Search Button */}
             <button
               onClick={onOpenSearch}
@@ -96,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Random Country Discovery */}
             <button
               onClick={onOpenRandomCountry}
-              className="hidden sm:flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-medium transition-all"
+              className="hidden lg:flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-medium transition-all"
               title="Découvrir un pays au hasard qui n'a pas encore de film"
             >
               <Shuffle className="w-4 h-4 text-emerald-400" />
@@ -116,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* API Key Modal Button */}
             <button
               onClick={onOpenApiKeyModal}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+              className={`hidden sm:flex items-center space-x-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                 hasApiKey
                   ? 'bg-slate-800/80 border-emerald-500/40 text-emerald-300 hover:bg-slate-800'
                   : 'bg-amber-500/10 border-amber-500/40 text-amber-300 hover:bg-amber-500/20'
@@ -124,13 +147,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Configurer la clé API OMDb"
             >
               <Key className="w-4 h-4" />
-              <span className="hidden sm:inline">
+              <span className="hidden xl:inline">
                 {hasApiKey ? 'Clé OMDb' : 'Clé OMDb requise'}
               </span>
             </button>
 
             {/* Export & Import */}
-            <div className="flex items-center space-x-1 bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
+            <div className="hidden sm:flex items-center space-x-1 bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
               <button
                 onClick={onExport}
                 className="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors"
@@ -153,6 +176,77 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden"
               />
             </div>
+
+            {/* User Auth Section */}
+            {!loading && (
+              <div className="relative">
+                {user ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                      className="flex items-center space-x-2 pl-2 pr-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/90 border border-slate-700 hover:border-amber-500/40 transition-all text-xs text-slate-200"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-xs shadow-sm">
+                        {userInitial}
+                      </div>
+                      <span className="hidden md:inline-block max-w-[120px] truncate font-medium text-slate-200">
+                        {user.email?.split('@')[0]}
+                      </span>
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Synchronisé au cloud" />
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {isUserMenuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        />
+                        <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-2 space-y-1 animate-fade-in">
+                          <div className="px-3 py-2 border-b border-slate-800/80">
+                            <div className="flex items-center space-x-1.5 text-emerald-400 text-[11px] font-medium mb-1">
+                              <Cloud className="w-3.5 h-3.5" />
+                              <span>Cloud Supabase actif</span>
+                            </div>
+                            <p className="text-xs text-slate-200 font-semibold truncate m-0">
+                              {user.email}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              onOpenApiKeyModal();
+                            }}
+                            className="w-full sm:hidden flex items-center space-x-2 px-3 py-2 rounded-lg text-xs text-slate-300 hover:bg-slate-800 transition-colors"
+                          >
+                            <Key className="w-4 h-4 text-amber-400" />
+                            <span>Configurer clé OMDb</span>
+                          </button>
+
+                          <button
+                            onClick={handleSignOut}
+                            className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors font-medium"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Se déconnecter</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={onOpenAuthModal}
+                    className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition-all"
+                  >
+                    <UserIcon className="w-4 h-4" />
+                    <span>Connexion</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

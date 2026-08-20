@@ -68,3 +68,24 @@ export interface UserData {
   countryMovies: Record<string, string[]>;
   omdbApiKey?: string;
 }
+
+export interface UserMovieRow {
+  id?: string;
+  user_id: string;
+  imdb_id: string;
+  title: string;
+  year?: string | null;
+  poster?: string | null;
+  director?: string | null;
+  actors?: string | null;
+  plot?: string | null;
+  genre?: string | null;
+  imdb_rating?: string | null;
+  runtime?: string | null;
+  country_raw?: string | null;
+  country_codes: string[];
+  user_rating?: number | null;
+  user_note?: string | null;
+  added_at: number;
+  created_at?: string;
+}
