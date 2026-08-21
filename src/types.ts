@@ -62,6 +62,38 @@ export interface OMDbMovieDetail {
   Error?: string;
 }
 
+export interface TMDBSearchResult {
+  id: number;
+  title: string;
+  original_title: string;
+  release_date?: string;
+  poster_path?: string | null;
+  overview?: string;
+  vote_average?: number;
+  origin_country?: string[];
+}
+
+export interface TMDBMovieDetail {
+  id: number;
+  title: string;
+  original_title: string;
+  release_date?: string;
+  poster_path?: string | null;
+  overview?: string;
+  runtime?: number;
+  genres?: { id: number; name: string }[];
+  production_countries?: { iso_3166_1: string; name: string }[];
+  origin_country?: string[];
+  vote_average?: number;
+  credits?: {
+    cast?: { id: number; name: string; character: string; profile_path?: string | null }[];
+    crew?: { id: number; name: string; job: string; department: string }[];
+  };
+  external_ids?: {
+    imdb_id?: string | null;
+  };
+}
+
 export interface UserData {
   movies: Record<string, Movie>; // Keyed by imdbID
   // Mapping of countryCode -> list of imdbIDs

@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import type {
   Country,
   Movie,
-  OMDbMovieDetail,
-  OMDbSearchResult
+  TMDBMovieDetail,
+  TMDBSearchResult
 } from '../types';
 
 import {
-  searchMoviesOMDb,
-  getMovieDetailsOMDb,
-  matchCountriesFromRawString,
-  convertOMDbToMovie
-} from '../services/omdbApi';
+  searchMoviesTMDB,
+  getMovieDetailsTMDB,
+  matchCountriesFromTMDB,
+  convertTMDBToMovie,
+  getTMDBPosterUrl
+} from '../services/tmdbApi';
 import confetti from 'canvas-confetti';
 import {
   Search,
@@ -21,39 +22,35 @@ import {
   Star,
   Film,
   Calendar,
-  User,
   Plus,
   AlertCircle,
-  Key
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react';
 
 interface MovieSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  apiKey: string;
   allCountries: Country[];
   onAddMovie: (movie: Movie, countryCodes: string[]) => void;
-  onOpenApiKeyModal: () => void;
-  initialPresetCountryCode?: string; // If user clicked "Add movie for this country"
+  initialPresetCountryCode?: string;
 }
 
 export const MovieSearchModal: React.FC<MovieSearchModalProps> = ({
   isOpen,
   onClose,
-  apiKey,
   allCountries,
   onAddMovie,
-  onOpenApiKeyModal,
   initialPresetCountryCode
 }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [results, setResults] = useState<OMDbSearchResult[]>([]);
+  const [results, setResults] = useState<TMDBSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Selected movie detail for confirmation step
-  const [selectedMovie, setSelectedMovie] = useState<OMDbMovieDetail | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<TMDBMovieDetail | null>(null);
   const [selectedCountryCodes, setSelectedCountryCodes] = useState<string[]>([]);
   const [userRating, setUserRating] = useState<number>(0);
   const [userNote, setUserNote] = useState<string>('');
@@ -65,18 +62,12 @@ export const MovieSearchModal: React.FC<MovieSearchModalProps> = ({
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        if (!isOpen) {
-          // Open triggered by parent
-        }
-      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Debounced search
+  // Debounced search on TMDB
   useEffect(() => {
     if (!query.trim() || selectedMovie) {
       if (!query.trim()) {
@@ -90,32 +81,32 @@ export const MovieSearchModal: React.FC<MovieSearchModalProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const list = await searchMoviesOMDb(query, apiKey);
+        const list = await searchMoviesTMDB(query);
         setResults(list);
         if (list.length === 0) {
-          setError('Aucun film trouvé pour cette recherche.');
+          setError('Aucun film trouvé sur TMDB pour cette recherche.');
         }
       } catch (err: any) {
-        setError(err?.message || 'Erreur lors de la recherche sur OMDb.');
+        setError(err?.message || 'Erreur lors de la recherche sur TMDB.');
         setResults([]);
       } finally {
         setLoading(false);
       }
-    }, 450);
+    }, 350);
 
     return () => clearTimeout(timer);
-  }, [query, apiKey, selectedMovie]);
+  }, [query, selectedMovie]);
 
-  // When clicking on a search result, fetch full details and match countries
-  const handleSelectSearchResult = async (imdbID: string) => {
+  // When clicking on a search result, fetch full details from TMDB
+  const handleSelectSearchResult = async (tmdbId: number) => {
     setDetailLoading(true);
     setError(null);
     try {
-      const details = await getMovieDetailsOMDb(imdbID, apiKey);
+      const details = await getMovieDetailsTMDB(tmdbId);
       setSelectedMovie(details);
 
-      // Match countries
-      const matched = matchCountriesFromRawString(details.Country, allCountries);
+      // Automatically match countries with ISO codes from TMDB
+      const matched = matchCountriesFromTMDB(details, allCountries);
       const codes = matched.map((c) => c.code);
 
       // If preset country is provided and not already in matched, include it
@@ -153,18 +144,22 @@ export const MovieSearchModal: React.FC<MovieSearchModalProps> = ({
       return;
     }
 
-    const movieObj = convertOMDbToMovie(selectedMovie, selectedCountryCodes);
+    const movieObj = convertTMDBToMovie(selectedMovie, selectedCountryCodes);
     if (userRating > 0) movieObj.userRating = userRating;
     if (userNote.trim()) movieObj.userNote = userNote.trim();
 
     onAddMovie(movieObj, selectedCountryCodes);
 
     // Confetti effect
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    } catch {
+      // Ignored if confetti fails
+    }
 
     handleResetAndClose();
   };
@@ -188,331 +183,342 @@ export const MovieSearchModal: React.FC<MovieSearchModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center space-x-2">
-            <Film className="w-5 h-5 text-amber-400" />
+            {selectedMovie ? (
+              <button
+                onClick={() => setSelectedMovie(null)}
+                className="mr-1 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                title="Retour à la recherche"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            ) : (
+              <Film className="w-5 h-5 text-amber-400" />
+            )}
             <h3 className="text-lg font-bold text-white m-0">
-              {selectedMovie ? 'Confirmer et associer le film' : 'Rechercher un film'}
+              {selectedMovie ? 'Confirmer et associer le film' : 'Rechercher un film (TMDB)'}
             </h3>
           </div>
           <button
             onClick={handleResetAndClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        {/* Body content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {!selectedMovie ? (
-            /* Search view */
-            <>
-              {/* Search input */}
+            /* STEP 1: SEARCH & RESULTS */
+            <div className="space-y-6">
+              {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Tapez le titre d'un film (ex: Parasite, Amélie, Le Fabuleux Destin, Spirited Away)..."
-                  className="w-full pl-12 pr-10 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-sm transition-all"
+                  placeholder="Tapez le titre d'un film (ex: Parasite, Amélie, Le Parrain...)"
+                  className="w-full pl-12 pr-10 py-3.5 bg-slate-950/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm shadow-inner"
                   autoFocus
                 />
                 {query && (
                   <button
                     onClick={() => setQuery('')}
-                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white rounded-md"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
 
-              {/* Status / Loading / Errors */}
+              {/* Status or Spinner */}
               {loading && (
-                <div className="flex items-center justify-center py-12 space-x-3 text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
-                  <span>Recherche en cours sur OMDb...</span>
+                <div className="flex flex-col items-center justify-center py-12 space-y-3 text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+                  <p className="text-sm">Recherche des films sur TMDB...</p>
                 </div>
               )}
 
-              {error && !loading && (
-                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold">{error}</p>
-                    {error.toLowerCase().includes('key') && (
-                      <button
-                        onClick={onOpenApiKeyModal}
-                        className="mt-2 flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400"
+              {detailLoading && (
+                <div className="flex flex-col items-center justify-center py-12 space-y-3 text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+                  <p className="text-sm">Chargement des détails et des pays...</p>
+                </div>
+              )}
+
+              {error && !loading && !detailLoading && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start space-x-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex-1">{error}</div>
+                </div>
+              )}
+
+              {/* Results List */}
+              {!loading && !detailLoading && results.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {results.map((item) => {
+                    const posterUrl = getTMDBPosterUrl(item.poster_path);
+                    const releaseYear = item.release_date ? item.release_date.slice(0, 4) : '';
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSelectSearchResult(item.id)}
+                        className="flex items-start space-x-3 p-3 bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/50 rounded-xl cursor-pointer transition-all group shadow-sm"
                       >
-                        <Key className="w-4 h-4" />
-                        <span>Configurer votre clé OMDb gratuite</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Search Results List */}
-              {!loading && results.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
-                  {results.map((item) => (
-                    <div
-                      key={item.imdbID}
-                      onClick={() => handleSelectSearchResult(item.imdbID)}
-                      className="flex items-center space-x-3 p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition-all group"
-                    >
-                      <div className="w-12 h-16 rounded-lg overflow-hidden bg-slate-900 shrink-0 flex items-center justify-center border border-slate-800">
-                        {item.Poster !== 'N/A' ? (
+                        {posterUrl ? (
                           <img
-                            src={item.Poster}
-                            alt={item.Title}
-                            className="w-full h-full object-cover"
+                            src={posterUrl}
+                            alt={item.title}
+                            className="w-16 h-24 object-cover rounded-lg bg-slate-800 shadow shrink-0"
                             loading="lazy"
                           />
                         ) : (
-                          <Film className="w-6 h-6 text-slate-600" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-white truncate group-hover:text-amber-400 transition-colors m-0">
-                          {item.Title}
-                        </h4>
-                        <div className="flex items-center space-x-2 text-xs text-slate-400 mt-1">
-                          <span className="flex items-center space-x-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>{item.Year}</span>
-                          </span>
-                          <span>•</span>
-                          <span className="capitalize">{item.Type}</span>
-                        </div>
-                      </div>
-                      <span className="p-2 rounded-lg bg-slate-800 group-hover:bg-amber-500 group-hover:text-slate-950 text-slate-400 transition-colors shrink-0">
-                        <Plus className="w-4 h-4" />
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Empty State / Hints */}
-              {!query && !loading && (
-                <div className="py-8 text-center text-slate-500">
-                  <Film className="w-12 h-12 mx-auto mb-3 text-slate-700 stroke-[1.5]" />
-                  <p className="text-sm text-slate-400 font-medium">
-                    Trouvez n'importe quel film mondial grâce à la base OMDb
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Les pays d'origine et de co-production seront automatiquement détectés !
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            /* Selected Movie Confirmation View */
-            <div className="space-y-6">
-              {detailLoading ? (
-                <div className="flex items-center justify-center py-12 space-x-3 text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
-                  <span>Chargement des détails du film...</span>
-                </div>
-              ) : (
-                <>
-                  {/* Movie Summary Card */}
-                  <div className="flex flex-col sm:flex-row gap-5 p-4 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="w-28 sm:w-32 h-40 sm:h-44 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-slate-800 shadow-md">
-                      {selectedMovie.Poster !== 'N/A' ? (
-                        <img
-                          src={selectedMovie.Poster}
-                          alt={selectedMovie.Title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Film className="w-8 h-8 text-slate-600" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h3 className="text-xl font-black text-white m-0">
-                          {selectedMovie.Title}
-                        </h3>
-                        {selectedMovie.imdbRating !== 'N/A' && (
-                          <div className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            <span>{selectedMovie.imdbRating} / 10</span>
+                          <div className="w-16 h-24 bg-slate-800 rounded-lg flex flex-col items-center justify-center text-slate-500 shrink-0">
+                            <Film className="w-6 h-6" />
+                            <span className="text-[9px] mt-1">Sans affiche</span>
                           </div>
                         )}
+
+                        <div className="flex-1 min-w-0 py-0.5 space-y-1">
+                          <h4 className="text-sm font-bold text-slate-100 group-hover:text-amber-400 transition-colors line-clamp-1 m-0">
+                            {item.title}
+                          </h4>
+                          {item.original_title && item.original_title !== item.title && (
+                            <p className="text-xs text-slate-400 italic line-clamp-1 m-0">
+                              {item.original_title}
+                            </p>
+                          )}
+                          <div className="flex items-center space-x-2 text-xs text-slate-400 pt-0.5">
+                            {releaseYear && (
+                              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[11px] font-medium text-slate-300">
+                                {releaseYear}
+                              </span>
+                            )}
+                            {item.vote_average ? (
+                              <span className="flex items-center space-x-0.5 text-amber-400 font-medium text-[11px]">
+                                <Star className="w-3 h-3 fill-amber-400" />
+                                <span>{item.vote_average.toFixed(1)}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                          {item.overview && (
+                            <p className="text-[11px] text-slate-400 line-clamp-2 m-0 pt-1 leading-relaxed">
+                              {item.overview}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
 
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                        <span>{selectedMovie.Year}</span>
-                        <span>•</span>
-                        <span>{selectedMovie.Runtime}</span>
-                        <span>•</span>
-                        <span>{selectedMovie.Genre}</span>
-                      </div>
-
-                      <div className="text-xs text-slate-300 flex items-center space-x-1">
-                        <User className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Réalisateur : </span>
-                        <strong className="text-white">{selectedMovie.Director}</strong>
-                      </div>
-
-                      {selectedMovie.Plot !== 'N/A' && (
-                        <p className="text-xs text-slate-400 line-clamp-3 italic">
-                          "{selectedMovie.Plot}"
-                        </p>
-                      )}
-
-                      <div className="text-xs text-slate-400">
-                        <span className="font-semibold text-slate-300">Pays détecté(s) par OMDb : </span>
-                        <span className="text-amber-300">{selectedMovie.Country || 'Non spécifié'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Country Association selector */}
-                  <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                    <label className="block text-sm font-bold text-white">
-                      Associer ce film aux pays suivants :
-                    </label>
-                    <p className="text-xs text-slate-400 m-0">
-                      Cochez les pays dans lesquels ce film doit compter (idéal pour les co-productions) :
-                    </p>
-
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {selectedCountryCodes.map((code) => {
-                        const country = allCountries.find((c) => c.code === code);
-                        return (
-                          <button
-                            key={code}
-                            type="button"
-                            onClick={() => handleToggleCountry(code)}
-                            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition-all"
-                          >
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>{country?.flag || '🏳️'}</span>
-                            <span>{country?.frenchName || code}</span>
-                            <span className="text-emerald-400 text-xs">✕</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Add extra country selector */}
-                    <div className="flex items-center space-x-2 pt-2">
-                      <select
-                        value={extraCountryToAdd}
-                        onChange={(e) => setExtraCountryToAdd(e.target.value)}
-                        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                      >
-                        <option value="">+ Ajouter un autre pays manuellement...</option>
-                        {allCountries
-                          .filter((c) => !selectedCountryCodes.includes(c.code))
-                          .sort((a, b) => a.frenchName.localeCompare(b.frenchName))
-                          .map((c) => (
-                            <option key={c.code} value={c.code}>
-                              {c.flag} {c.frenchName} ({c.continent})
-                            </option>
-                          ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={handleAddExtraCountry}
-                        disabled={!extraCountryToAdd}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Ajouter
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Personal Rating & Review */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        Votre note personnelle (optionnel) :
-                      </label>
-                      <div className="flex items-center space-x-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setUserRating(userRating === star ? 0 : star)}
-                            className="p-1 text-slate-600 hover:text-amber-400 transition-colors"
-                          >
-                            <Star
-                              className={`w-6 h-6 ${
-                                userRating >= star
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'text-slate-600'
-                              }`}
-                            />
-                          </button>
-                        ))}
-                        {userRating > 0 && (
-                          <span className="text-xs text-amber-400 font-bold ml-2">
-                            {userRating} / 5
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        Votre avis / commentaire (optionnel) :
-                      </label>
-                      <input
-                        type="text"
-                        value={userNote}
-                        onChange={(e) => setUserNote(e.target.value)}
-                        placeholder="Ex: Chef-d'oeuvre du cinéma d'animation..."
-                        className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-                  </div>
-                </>
+              {!loading && !detailLoading && !query && (
+                <div className="py-12 text-center text-slate-500 space-y-2">
+                  <Film className="w-12 h-12 mx-auto text-slate-700 stroke-[1.5]" />
+                  <p className="text-sm m-0">Recherchez parmi des millions de films du monde entier.</p>
+                  <p className="text-xs text-slate-600 m-0">Les données, affiches et résumés sont fournis par TMDB.</p>
+                </div>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-900/90">
-          {selectedMovie ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setSelectedMovie(null)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                Retour aux résultats
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAdd}
-                disabled={selectedCountryCodes.length === 0}
-                className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                <Check className="w-4 h-4 stroke-[3]" />
-                <span>Ajouter à ma collection ({selectedCountryCodes.length} pays)</span>
-              </button>
-            </>
           ) : (
-            <div className="w-full flex items-center justify-between text-xs text-slate-500">
-              <span>
-                Astuce : Tapez le titre en anglais ou dans la langue originale pour plus de résultats OMDb.
-              </span>
-              <button
-                type="button"
-                onClick={handleResetAndClose}
-                className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white"
-              >
-                Fermer
-              </button>
+            /* STEP 2: MOVIE DETAILS & COUNTRY ASSIGNMENT */
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex flex-col sm:flex-row gap-5 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                {selectedMovie.poster_path ? (
+                  <img
+                    src={getTMDBPosterUrl(selectedMovie.poster_path)}
+                    alt={selectedMovie.title}
+                    className="w-28 sm:w-36 h-40 sm:h-52 object-cover rounded-xl shadow-lg shrink-0 mx-auto sm:mx-0"
+                  />
+                ) : (
+                  <div className="w-28 sm:w-36 h-40 sm:h-52 bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 shrink-0 mx-auto sm:mx-0">
+                    <Film className="w-8 h-8" />
+                  </div>
+                )}
+
+                <div className="flex-1 space-y-2.5">
+                  <div>
+                    <h3 className="text-xl font-bold text-white m-0">
+                      {selectedMovie.title}
+                    </h3>
+                    {selectedMovie.original_title && selectedMovie.original_title !== selectedMovie.title && (
+                      <p className="text-xs text-slate-400 italic m-0">
+                        Titre original : {selectedMovie.original_title}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                    {selectedMovie.release_date && (
+                      <span className="flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-800">
+                        <Calendar className="w-3 h-3 text-amber-400" />
+                        <span>{selectedMovie.release_date.slice(0, 4)}</span>
+                      </span>
+                    )}
+                    {selectedMovie.runtime ? (
+                      <span className="px-2 py-0.5 rounded-md bg-slate-800">
+                        {selectedMovie.runtime} min
+                      </span>
+                    ) : null}
+                    {selectedMovie.vote_average ? (
+                      <span className="flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span>{selectedMovie.vote_average.toFixed(1)}/10</span>
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {/* Cast and crew */}
+                  <div className="text-xs text-slate-400 space-y-1">
+                    {selectedMovie.credits?.crew?.some((c) => c.job === 'Director') && (
+                      <p className="m-0">
+                        <span className="text-slate-300 font-semibold">Réalisation : </span>
+                        {selectedMovie.credits.crew.filter((c) => c.job === 'Director').map((c) => c.name).join(', ')}
+                      </p>
+                    )}
+                    {selectedMovie.credits?.cast && selectedMovie.credits.cast.length > 0 && (
+                      <p className="m-0">
+                        <span className="text-slate-300 font-semibold">Avec : </span>
+                        {selectedMovie.credits.cast.slice(0, 4).map((c) => c.name).join(', ')}
+                      </p>
+                    )}
+                    {selectedMovie.genres && selectedMovie.genres.length > 0 && (
+                      <p className="m-0">
+                        <span className="text-slate-300 font-semibold">Genres : </span>
+                        {selectedMovie.genres.map((g) => g.name).join(', ')}
+                      </p>
+                    )}
+                  </div>
+
+                  {selectedMovie.overview && (
+                    <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed pt-1 m-0">
+                      {selectedMovie.overview}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Country Selection */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Pays associés à ce film (co-productions)</span>
+                  </label>
+                  <span className="text-xs text-amber-400 font-medium">
+                    {selectedCountryCodes.length} pays sélectionné{selectedCountryCodes.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                {/* Badges of selected countries */}
+                <div className="flex flex-wrap gap-2">
+                  {allCountries
+                    .filter((c) => selectedCountryCodes.includes(c.code))
+                    .map((country) => (
+                      <button
+                        key={country.code}
+                        type="button"
+                        onClick={() => handleToggleCountry(country.code)}
+                        className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 group hover:bg-amber-400 transition-all"
+                      >
+                        <span className="text-base">{country.flag}</span>
+                        <span>{country.frenchName}</span>
+                        <X className="w-3.5 h-3.5 ml-1 opacity-70 group-hover:opacity-100" />
+                      </button>
+                    ))}
+                </div>
+
+                {/* Add other country dropdown */}
+                <div className="flex items-center space-x-2 pt-1">
+                  <select
+                    value={extraCountryToAdd}
+                    onChange={(e) => setExtraCountryToAdd(e.target.value)}
+                    className="flex-1 bg-slate-950/80 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="">+ Associer un autre pays...</option>
+                    {allCountries
+                      .filter((c) => !selectedCountryCodes.includes(c.code))
+                      .map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.frenchName} ({c.name})
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddExtraCountry}
+                    disabled={!extraCountryToAdd}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 font-medium text-xs rounded-xl border border-slate-700 transition-all flex items-center space-x-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Ajouter</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* User Rating and Review */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300">Votre note personnelle</label>
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setUserRating(userRating === star ? 0 : star)}
+                        className="p-1 text-slate-600 hover:text-amber-400 transition-colors"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= userRating
+                              ? 'fill-amber-400 text-amber-400'
+                              : 'text-slate-700'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    {userRating > 0 && (
+                      <span className="text-xs text-amber-400 font-bold ml-2">
+                        {userRating}/5
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300">Vos notes ou critique (optionnel)</label>
+                  <textarea
+                    rows={2}
+                    value={userNote}
+                    onChange={(e) => setUserNote(e.target.value)}
+                    placeholder="Votre avis sur le film, les thèmes abordés..."
+                    className="w-full bg-slate-950/80 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMovie(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  Choisir un autre film
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAdd}
+                  disabled={selectedCountryCodes.length === 0}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-all"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Enregistrer dans ma collection</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

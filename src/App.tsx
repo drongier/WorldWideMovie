@@ -4,8 +4,6 @@ import { INITIAL_COUNTRIES } from './data/countriesData';
 import { fetchCountries } from './services/countriesApi';
 import {
   loadUserData,
-  getStoredApiKey,
-  setStoredApiKey,
   addMovieToStorage,
   removeMovieFromStorage,
   updateMovieInStorage,
@@ -25,16 +23,14 @@ import { StatsBar } from './components/StatsBar';
 import { CountryList } from './components/CountryList';
 import { MovieSearchModal } from './components/MovieSearchModal';
 import { ManualMovieModal } from './components/ManualMovieModal';
-import { ApiKeyModal } from './components/ApiKeyModal';
 import { RandomCountryModal } from './components/RandomCountryModal';
 import { AuthModal } from './components/AuthModal';
-import { Key, Film, CloudUpload, Loader2, Sparkles } from 'lucide-react';
+import { Film, CloudUpload, Loader2, Sparkles } from 'lucide-react';
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
   const [countries, setCountries] = useState<Country[]>(INITIAL_COUNTRIES);
   const [userData, setUserData] = useState<UserData>(() => loadUserData());
-  const [apiKey, setApiKey] = useState<string>(() => getStoredApiKey());
   const [selectedContinent, setSelectedContinent] = useState<Continent | 'Tous'>('Tous');
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [hasLocalDataToMigrate, setHasLocalDataToMigrate] = useState(false);
@@ -48,7 +44,6 @@ export default function App() {
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [manualPresetCode, setManualPresetCode] = useState<string | undefined>(undefined);
 
-  const [isApiKeyOpen, setIsApiKeyOpen] = useState(false);
   const [isRandomOpen, setIsRandomOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
@@ -96,7 +91,7 @@ export default function App() {
     }
   }, [user, authLoading, refreshUserData]);
 
-  // Handler for adding a movie (automatic from OMDb or manual)
+  // Handler for adding a movie (automatic from TMDB or manual)
   const handleAddMovie = async (movie: Movie, countryCodes: string[]) => {
     if (user) {
       try {
@@ -222,12 +217,6 @@ export default function App() {
     }
   };
 
-  // Handler for saving API key
-  const handleSaveApiKey = (key: string) => {
-    setStoredApiKey(key);
-    setApiKey(key);
-  };
-
   // Open search modal with a preset country (shortcut from Country card)
   const handleOpenSearchForCountry = (country: Country) => {
     setSearchPresetCode(country.code);
@@ -257,10 +246,8 @@ export default function App() {
           setManualPresetCode(undefined);
           setIsManualOpen(true);
         }}
-        onOpenApiKeyModal={() => setIsApiKeyOpen(true)}
         onOpenRandomCountry={() => setIsRandomOpen(true)}
         onOpenAuthModal={() => setIsAuthOpen(true)}
-        hasApiKey={Boolean(apiKey)}
         onExport={() => exportDataToJson(userData)}
         onImport={async (jsonStr) => {
           try {
@@ -360,31 +347,6 @@ export default function App() {
           </div>
         )}
 
-        {/* API Key Reminder Banner (if not set) */}
-        {!apiKey && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 text-amber-200">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-                <Key className="w-5 h-5" />
-              </div>
-              <div className="text-xs sm:text-sm">
-                <p className="font-bold text-amber-300 m-0">
-                  Activez la recherche OMDb complète en 10 secondes
-                </p>
-                <p className="text-slate-400 m-0 text-xs">
-                  Ajoutez votre clé gratuite pour charger instantanément les affiches et informations de tous les films.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsApiKeyOpen(true)}
-              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition-all shrink-0"
-            >
-              Configurer ma clé
-            </button>
-          </div>
-        )}
-
         {/* Global Stats & Continent Progress */}
         <StatsBar
           countries={countries}
@@ -424,13 +386,8 @@ export default function App() {
       <MovieSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        apiKey={apiKey}
         allCountries={countries}
         onAddMovie={handleAddMovie}
-        onOpenApiKeyModal={() => {
-          setIsSearchOpen(false);
-          setIsApiKeyOpen(true);
-        }}
         initialPresetCountryCode={searchPresetCode}
       />
 
@@ -440,13 +397,6 @@ export default function App() {
         allCountries={countries}
         onAddMovie={handleAddMovie}
         presetCountryCode={manualPresetCode}
-      />
-
-      <ApiKeyModal
-        isOpen={isApiKeyOpen}
-        onClose={() => setIsApiKeyOpen(false)}
-        apiKey={apiKey}
-        onSaveApiKey={handleSaveApiKey}
       />
 
       <RandomCountryModal
@@ -467,7 +417,7 @@ export default function App() {
             <span>Tour du monde du 7ème art</span>
           </div>
           <p className="m-0">
-            Données pays propulsées par REST Countries • Métadonnées cinématographiques fournies par OMDb API.
+            Données pays propulsées par REST Countries • Métadonnées cinématographiques fournies par The Movie Database (TMDB).
           </p>
         </div>
       </footer>

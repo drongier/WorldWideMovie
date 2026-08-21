@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import {
   Globe,
   Search,
-  Key,
   Download,
   Upload,
   Plus,
@@ -17,10 +16,8 @@ import { useAuth } from '../contexts/AuthContext';
 interface NavbarProps {
   onOpenSearch: () => void;
   onOpenManualAdd: () => void;
-  onOpenApiKeyModal: () => void;
   onOpenRandomCountry: () => void;
   onOpenAuthModal: () => void;
-  hasApiKey: boolean;
   onExport: () => void;
   onImport: (jsonStr: string) => void;
   totalWatchedCountries: number;
@@ -30,10 +27,8 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenSearch,
   onOpenManualAdd,
-  onOpenApiKeyModal,
   onOpenRandomCountry,
   onOpenAuthModal,
-  hasApiKey,
   onExport,
   onImport,
   totalWatchedCountries,
@@ -97,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <span className="flex items-center space-x-2.5 text-sm text-slate-400 group-hover:text-slate-200">
                 <Search className="w-4 h-4 text-amber-400" />
-                <span>Rechercher un film à ajouter (OMDb)...</span>
+                <span>Rechercher un film à ajouter...</span>
               </span>
               <kbd className="hidden lg:inline-block px-2 py-0.5 text-xs text-slate-400 bg-slate-900/80 rounded border border-slate-700 font-mono">
                 ⌘K
@@ -130,26 +125,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onOpenManualAdd}
               className="hidden sm:flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-medium transition-all"
-              title="Ajouter un film manuellement sans OMDb"
+              title="Ajouter un film manuellement"
             >
               <Plus className="w-4 h-4 text-amber-400" />
               <span>Manuel</span>
-            </button>
-
-            {/* API Key Modal Button */}
-            <button
-              onClick={onOpenApiKeyModal}
-              className={`hidden sm:flex items-center space-x-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                hasApiKey
-                  ? 'bg-slate-800/80 border-emerald-500/40 text-emerald-300 hover:bg-slate-800'
-                  : 'bg-amber-500/10 border-amber-500/40 text-amber-300 hover:bg-amber-500/20'
-              }`}
-              title="Configurer la clé API OMDb"
-            >
-              <Key className="w-4 h-4" />
-              <span className="hidden xl:inline">
-                {hasApiKey ? 'Clé OMDb' : 'Clé OMDb requise'}
-              </span>
             </button>
 
             {/* Export & Import */}
@@ -213,17 +192,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                               {user.email}
                             </p>
                           </div>
-
-                          <button
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              onOpenApiKeyModal();
-                            }}
-                            className="w-full sm:hidden flex items-center space-x-2 px-3 py-2 rounded-lg text-xs text-slate-300 hover:bg-slate-800 transition-colors"
-                          >
-                            <Key className="w-4 h-4 text-amber-400" />
-                            <span>Configurer clé OMDb</span>
-                          </button>
 
                           <button
                             onClick={handleSignOut}
