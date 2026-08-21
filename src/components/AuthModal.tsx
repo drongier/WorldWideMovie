@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { setStoredSupabaseConfig, getStoredSupabaseConfig, isValidHttpUrl } from '../services/supabase';
 import {
   X,
   Mail,
@@ -11,7 +12,9 @@ import {
   CheckCircle2,
   Loader2,
   Film,
-  Sparkles
+  Sparkles,
+  Settings,
+  Database
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -20,7 +23,7 @@ interface AuthModalProps {
   onSuccess?: () => void;
 }
 
-type AuthTab = 'login' | 'register' | 'forgot_password';
+type AuthTab = 'login' | 'register' | 'forgot_password' | 'config';
 
 export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const {
@@ -31,10 +34,13 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     resetPasswordForEmail
   } = useAuth();
 
-  const [tab, setTab] = useState<AuthTab>('login');
+  const initialConfig = getStoredSupabaseConfig();
+  const [tab, setTab] = useState<AuthTab>(isConfigured ? 'login' : 'config');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [customUrl, setCustomUrl] = useState(initialConfig.url || '');
+  const [customKey, setCustomKey] = useState(initialConfig.anonKey || '');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -51,6 +57,30 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const handleTabChange = (newTab: AuthTab) => {
     resetFormState();
     setTab(newTab);
+  };
+
+  const handleSaveConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const trimmedUrl = customUrl.trim();
+    const trimmedKey = customKey.trim();
+
+    if (!isValidHttpUrl(trimmedUrl)) {
+      setErrorMessage('L\'URL Supabase est invalide (doit commencer par https://).');
+      return;
+    }
+
+    if (!trimmedKey || trimmedKey.length < 20) {
+      setErrorMessage('La clé Anon Supabase semble invalide ou trop courte.');
+      return;
+    }
+
+    setStoredSupabaseConfig(trimmedUrl, trimmedKey);
+    setSuccessMessage('Configuration enregistrée ! Rechargement en cours...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,13 +128,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             setErrorMessage('Cet email est déjà enregistré.');
           } else {
             setSuccessMessage(
-              'Compte créé avec succès ! Si la confirmation par email est activée, vérifiez votre boîte de réception.'
+              'Compte créé avec succès ! Si la confirmation par email est activée sur Supabase, vérifiez vos emails.'
             );
-            // If session auto-created:
             setTimeout(() => {
               onSuccess?.();
               onClose();
-            }, 1500);
+            }, 2000);
           }
         }
       } else if (tab === 'forgot_password') {
@@ -151,11 +180,13 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 {tab === 'login' && 'Connexion'}
                 {tab === 'register' && 'Créer un compte'}
                 {tab === 'forgot_password' && 'Mot de passe oublié'}
+                {tab === 'config' && 'Configuration Supabase'}
               </h2>
               <p className="text-xs text-slate-400">
                 {tab === 'login' && 'Synchronisez vos films et accédez-y de partout'}
                 {tab === 'register' && 'Démarrez votre carnet de voyage cinématographique'}
                 {tab === 'forgot_password' && 'Recevez un lien par email pour réinitialiser votre accès'}
+                {tab === 'config' && 'Connectez votre base de données Cloud en 10 secondes'}
               </p>
             </div>
           </div>
@@ -167,20 +198,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           </button>
         </div>
 
-        {/* Missing Supabase configuration alert (if applicable) */}
-        {!isConfigured && (
-          <div className="p-4 bg-amber-500/10 border-b border-amber-500/20 text-amber-200 text-xs space-y-2">
-            <div className="flex items-center space-x-2 font-semibold text-amber-300">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>Configuration Supabase requise</span>
-            </div>
-            <p className="text-slate-300">
-              Les variables <code className="bg-slate-950 px-1 py-0.5 rounded text-amber-300">VITE_SUPABASE_URL</code> et <code className="bg-slate-950 px-1 py-0.5 rounded text-amber-300">VITE_SUPABASE_ANON_KEY</code> ne sont pas encore configurées dans votre fichier <code className="text-amber-300">.env</code>.
-            </p>
-          </div>
-        )}
-
-        {/* Tabs for switching Login / Register */}
+        {/* Tabs switcher */}
         <div className="flex border-b border-slate-800 bg-slate-950/40 p-1 gap-1">
           <button
             onClick={() => handleTabChange('login')}
@@ -204,6 +222,20 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             <UserPlus className="w-3.5 h-3.5" />
             <span>S'inscrire</span>
           </button>
+          <button
+            onClick={() => handleTabChange('config')}
+            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center space-x-1.5 ${
+              tab === 'config'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : !isConfigured
+                ? 'text-amber-400 bg-amber-500/10 border border-amber-500/30 animate-pulse'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+            title="Configurer les clés Supabase"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Clés Cloud</span>
+          </button>
         </div>
 
         {/* Modal Body & Form */}
@@ -223,98 +255,166 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Field */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
-                <Mail className="w-3.5 h-3.5 text-amber-400" />
-                <span>Adresse Email</span>
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre.email@exemple.com"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
-              />
-            </div>
-
-            {/* Password Field (for login / register) */}
-            {tab !== 'forgot_password' && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Mot de passe</span>
-                  </label>
-                  {tab === 'login' && (
-                    <button
-                      type="button"
-                      onClick={() => handleTabChange('forgot_password')}
-                      className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
-                    >
-                      Oublié ?
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
-                />
+          {/* Direct Supabase Keys Form */}
+          {tab === 'config' ? (
+            <form onSubmit={handleSaveConfig} className="space-y-4">
+              <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-200 space-y-1.5">
+                <p className="font-semibold text-amber-300 m-0 flex items-center gap-1.5">
+                  <Database className="w-4 h-4" />
+                  Connexion directe à votre projet Supabase
+                </p>
+                <p className="text-slate-300 m-0 leading-relaxed text-[11px]">
+                  Collez simplement votre <strong>Project URL</strong> et votre <strong>Anon Public Key</strong> depuis votre tableau de bord Supabase (<em>Project Settings &gt; API</em>) :
+                </p>
               </div>
-            )}
 
-            {/* Confirm Password (only for register) */}
-            {tab === 'register' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
-                  <Lock className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Confirmer le mot de passe</span>
+                <label className="text-xs font-semibold text-slate-300">
+                  URL Supabase (Project URL)
                 </label>
                 <input
-                  type="password"
+                  type="url"
                   required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                  placeholder="https://abcdefghijklmnopqrst.supabase.co"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-xs font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300">
+                  Clé Publique Anon (Project API Key)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={customKey}
+                  onChange={(e) => setCustomKey(e.target.value)}
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-xs font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Enregistrer et activer le Cloud</span>
+              </button>
+            </form>
+          ) : (
+            /* Login / Register / Forgot Password Form */
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* If not configured, show quick prompt */}
+              {!isConfigured && (
+                <div
+                  onClick={() => setTab('config')}
+                  className="p-3 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/30 rounded-xl text-xs text-amber-300 cursor-pointer flex items-center justify-between transition-all"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                    <span>Cliquez ici pour coller vos clés Supabase</span>
+                  </span>
+                  <span className="text-[10px] font-bold uppercase bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40">
+                    Configurer
+                  </span>
+                </div>
+              )}
+
+              {/* Email Field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+                  <Mail className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Adresse Email</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="votre.email@exemple.com"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
                 />
               </div>
-            )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading || !isConfigured}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Traitement en cours...</span>
-                </>
-              ) : (
-                <>
-                  {tab === 'login' && <LogIn className="w-4 h-4" />}
-                  {tab === 'register' && <UserPlus className="w-4 h-4" />}
-                  {tab === 'forgot_password' && <KeyRound className="w-4 h-4" />}
-                  <span>
-                    {tab === 'login' && 'Se connecter'}
-                    {tab === 'register' && 'Créer mon compte'}
-                    {tab === 'forgot_password' && 'Envoyer le lien de réinitialisation'}
-                  </span>
-                </>
+              {/* Password Field (for login / register) */}
+              {tab !== 'forgot_password' && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Mot de passe</span>
+                    </label>
+                    {tab === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => handleTabChange('forgot_password')}
+                        className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                      >
+                        Oublié ?
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                  />
+                </div>
               )}
-            </button>
-          </form>
+
+              {/* Confirm Password (only for register) */}
+              {tab === 'register' && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Confirmer le mot de passe</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                  />
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading || !isConfigured}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Traitement en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    {tab === 'login' && <LogIn className="w-4 h-4" />}
+                    {tab === 'register' && <UserPlus className="w-4 h-4" />}
+                    {tab === 'forgot_password' && <KeyRound className="w-4 h-4" />}
+                    <span>
+                      {tab === 'login' && 'Se connecter'}
+                      {tab === 'register' && 'Créer mon compte'}
+                      {tab === 'forgot_password' && 'Envoyer le lien de réinitialisation'}
+                    </span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
           {/* Social Google Login */}
-          {tab !== 'forgot_password' && isConfigured && (
+          {tab !== 'config' && tab !== 'forgot_password' && isConfigured && (
             <div className="space-y-3 pt-2">
               <div className="relative flex items-center justify-center">
                 <div className="border-t border-slate-800 w-full"></div>
@@ -356,12 +456,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5 text-[11px] text-slate-400">
             <div className="flex items-center space-x-1.5 text-amber-400 font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Avantages d'un compte WorldWideMovie</span>
+              <span>Avantages du Cloud WorldWideMovie</span>
             </div>
             <p className="m-0 leading-relaxed">
-              • Sauvegarde automatique dans le Cloud (Supabase PostgreSQL)<br />
-              • Vos films et statistiques accessibles sur ordinateur, smartphone et tablette<br />
-              • Espace 100% privé et sécurisé
+              • Sauvegarde automatique dans le Cloud (PostgreSQL)<br />
+              • Retrouvez vos films sur n'importe quel ordinateur ou smartphone<br />
+              • Vos données restent privées et sécurisées
             </p>
           </div>
         </div>
