@@ -8,8 +8,8 @@ import {
   ExternalLink,
   MessageSquare,
   Clock,
-  User,
-  Share2
+  Check,
+  X
 } from 'lucide-react';
 
 interface MovieCardProps {
@@ -54,40 +54,40 @@ export const MovieCard: React.FC<MovieCardProps> = ({
   const isImdbLink = movie.imdbID && movie.imdbID.startsWith('tt');
 
   return (
-    <div className="relative group bg-slate-900/90 border border-slate-800/90 hover:border-slate-700 rounded-xl overflow-hidden shadow-lg transition-all flex flex-col sm:flex-row">
-      {/* Poster */}
-      <div className="w-full sm:w-28 h-44 sm:h-auto bg-slate-950 shrink-0 relative overflow-hidden flex items-center justify-center border-b sm:border-b-0 sm:border-r border-slate-800/80">
+    <div className="relative bg-[#0d1829] border-2 border-[#1e3a8a] rounded-lg overflow-hidden shadow-[0_3px_8px_rgba(0,0,0,0.6)] flex flex-col sm:flex-row group">
+      {/* DVD Poster Frame */}
+      <div className="w-full sm:w-28 h-40 sm:h-auto bg-[#050b14] shrink-0 relative overflow-hidden flex items-center justify-center border-b sm:border-b-0 sm:border-r-2 border-[#1e3a8a]">
         {movie.poster ? (
           <img
             src={movie.poster}
             alt={movie.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center p-3 text-slate-600">
-            <Film className="w-8 h-8 mb-1" />
-            <span className="text-[10px] text-center">Pas d'affiche</span>
+          <div className="flex flex-col items-center justify-center p-2 text-slate-500">
+            <Film className="w-6 h-6 mb-1 text-slate-600" />
+            <span className="text-[9px] uppercase font-bold">Sans affiche</span>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
+      <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between space-y-2">
         <div>
           {/* Header row: Title & Remove button */}
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h4 className="text-sm sm:text-base font-black text-white leading-snug m-0">
+              <h4 className="text-sm font-black text-white leading-snug m-0 uppercase tracking-wide font-sans">
                 {movie.title}
               </h4>
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400 mt-1">
-                <span className="font-semibold text-slate-300">{movie.year}</span>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                <span className="font-bold text-amber-300">[{movie.year || 'Année inconnue'}]</span>
                 {movie.runtime && (
                   <>
                     <span>•</span>
-                    <span className="flex items-center space-x-0.5">
-                      <Clock className="w-3 h-3 text-slate-500" />
+                    <span className="flex items-center space-x-0.5 text-slate-300">
+                      <Clock className="w-3 h-3 text-amber-400" />
                       <span>{movie.runtime}</span>
                     </span>
                   </>
@@ -95,54 +95,61 @@ export const MovieCard: React.FC<MovieCardProps> = ({
                 {movie.genre && (
                   <>
                     <span>•</span>
-                    <span className="text-slate-400">{movie.genre}</span>
+                    <span className="text-slate-300 italic">{movie.genre}</span>
+                  </>
+                )}
+                {movie.imdbRating && (
+                  <>
+                    <span>•</span>
+                    <span className="px-1 py-0.2 bg-[#050b14] text-amber-400 font-bold rounded border border-[#1e3a8a] text-[10px]">
+                      ★ TMDB {movie.imdbRating}
+                    </span>
                   </>
                 )}
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex items-center space-x-1 shrink-0">
-              {isImdbLink && (
-                <a
-                  href={`https://www.imdb.com/title/${movie.imdbID}/`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-amber-400 hover:bg-slate-800 transition-colors"
-                  title="Voir sur IMDb"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-              <button
-                onClick={() => onRemove(movie.imdbID, currentCountryCode)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                title="Retirer ce film pour ce pays"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Remove movie button */}
+            <button
+              onClick={() => onRemove(movie.imdbID, currentCountryCode)}
+              className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/20 border border-transparent hover:border-red-500/40 transition-colors shrink-0"
+              title="Retirer ce film du pays"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          {/* Director */}
-          {movie.director && movie.director !== 'Inconnu' && (
-            <div className="text-xs text-slate-400 flex items-center space-x-1 mt-1.5">
-              <User className="w-3 h-3 text-slate-500" />
-              <span>De : <strong className="text-slate-200">{movie.director}</strong></span>
-            </div>
+          {/* Director & Cast */}
+          <div className="text-[11px] text-slate-300 space-y-0.5 mt-1.5 font-sans">
+            {movie.director && movie.director !== 'Inconnu' && (
+              <p className="m-0">
+                <span className="text-amber-400 font-bold">Réal : </span>
+                {movie.director}
+              </p>
+            )}
+            {movie.actors && (
+              <p className="m-0 text-slate-400 truncate">
+                <span className="text-slate-300 font-bold">Avec : </span>
+                {movie.actors}
+              </p>
+            )}
+          </div>
+
+          {/* Synopsis */}
+          {movie.plot && (
+            <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed mt-1.5 m-0 bg-[#070e1a]/60 p-1.5 rounded border border-[#1e293b]">
+              {movie.plot}
+            </p>
           )}
 
-          {/* Co-productions badges */}
+          {/* Co-production badges */}
           {otherCountries.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-1 border-t border-slate-800/60 text-[11px] text-slate-400">
-              <span className="flex items-center space-x-1 text-amber-400 font-medium">
-                <Share2 className="w-3 h-3" />
-                <span>Co-production :</span>
-              </span>
+            <div className="flex flex-wrap items-center gap-1 mt-2 text-[10px]">
+              <span className="text-slate-400 font-bold uppercase">Co-prod :</span>
               {otherCountries.map((c) => (
                 <span
                   key={c.code}
-                  className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300"
+                  className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-[#162740] border border-[#1e3a8a] text-slate-200"
                 >
                   <span>{c.flag}</span>
                   <span>{c.frenchName}</span>
@@ -152,79 +159,99 @@ export const MovieCard: React.FC<MovieCardProps> = ({
           )}
         </div>
 
-        {/* Ratings & Notes Section */}
-        <div className="pt-2 border-t border-slate-800/60 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            {/* User Star Rating */}
-            <div className="flex items-center space-x-1">
-              <span className="text-slate-400 text-[11px] mr-1">Mon avis :</span>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => handleStarClick(star)}
-                  className="p-0.5 text-slate-600 hover:text-amber-400 transition-colors"
-                  title={`Noter ${star}/5`}
-                >
-                  <Star
-                    className={`w-3.5 h-3.5 ${
-                      (movie.userRating || 0) >= star
-                        ? 'fill-amber-400 text-amber-400'
-                        : 'text-slate-600'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-
-            {/* IMDb Rating */}
-            {movie.imdbRating && (
-              <div className="flex items-center space-x-1 text-[11px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span>IMDb : {movie.imdbRating}/10</span>
-              </div>
-            )}
+        {/* Footer: User Star Rating & Notes Notepad */}
+        <div className="pt-2 border-t border-[#1e293b] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          {/* 5-Star Rating (2000s Gold Stars) */}
+          <div className="flex items-center space-x-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">Ma note :</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => handleStarClick(star)}
+                className="p-0.5 text-slate-600 hover:text-amber-400 transition-colors"
+                title={`Noter ${star}/5`}
+              >
+                <Star
+                  className={`w-4 h-4 ${
+                    star <= (movie.userRating || 0)
+                      ? 'fill-amber-400 text-amber-400'
+                      : 'text-slate-700'
+                  }`}
+                />
+              </button>
+            ))}
+            {movie.userRating ? (
+              <span className="text-[11px] font-bold text-amber-400 ml-1 font-mono">
+                [{movie.userRating}/5]
+              </span>
+            ) : null}
           </div>
 
-          {/* User Note */}
-          {isEditingNote ? (
-            <div className="space-y-1.5">
-              <textarea
-                value={tempNote}
-                onChange={(e) => setTempNote(e.target.value)}
-                placeholder="Votre avis / souvenir du film..."
-                className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                rows={2}
-                autoFocus
-              />
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setIsEditingNote(false)}
-                  className="px-2 py-1 text-[11px] text-slate-400 hover:text-white"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleSaveNote}
-                  className="px-2.5 py-1 rounded bg-amber-500 text-slate-950 font-bold text-[11px] hover:bg-amber-400"
-                >
-                  Enregistrer
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              onClick={() => setIsEditingNote(true)}
-              className="flex items-start space-x-1.5 text-xs text-slate-400 hover:text-slate-200 cursor-pointer bg-slate-950/40 p-1.5 rounded-lg border border-transparent hover:border-slate-800 transition-colors"
-            >
-              <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-500" />
-              {movie.userNote ? (
-                <span className="italic text-slate-300 line-clamp-2">"{movie.userNote}"</span>
-              ) : (
-                <span className="text-slate-500 italic text-[11px]">+ Ajouter une note personnelle...</span>
-              )}
-            </div>
-          )}
+          {/* Note button or IMDb link */}
+          <div className="flex items-center space-x-2">
+            {!isEditingNote && (
+              <button
+                onClick={() => {
+                  setTempNote(movie.userNote || '');
+                  setIsEditingNote(true);
+                }}
+                className="flex items-center space-x-1 px-2 py-0.5 rounded btn-y2k-secondary text-[10px]"
+              >
+                <MessageSquare className="w-3 h-3 text-amber-400" />
+                <span>{movie.userNote ? 'Modifier mon avis' : '+ Mon avis'}</span>
+              </button>
+            )}
+
+            {isImdbLink && (
+              <a
+                href={`https://www.imdb.com/title/${movie.imdbID}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-[#f5c518] text-black font-black text-[10px] border border-amber-300 shadow-sm"
+                title="Voir la fiche IMDb"
+              >
+                <span>IMDb</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
+          </div>
         </div>
+
+        {/* User Note Editor (if open) */}
+        {isEditingNote && (
+          <div className="p-2 rounded bg-[#070e1a] border border-amber-500/30 space-y-1.5 animate-fade-in mt-1">
+            <textarea
+              rows={2}
+              value={tempNote}
+              onChange={(e) => setTempNote(e.target.value)}
+              placeholder="Votre avis / critique sur ce film..."
+              className="w-full bg-[#030712] border border-[#1e3a8a] rounded p-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans"
+              autoFocus
+            />
+            <div className="flex justify-end space-x-1.5">
+              <button
+                onClick={() => setIsEditingNote(false)}
+                className="px-2 py-1 rounded bg-[#1e293b] text-slate-300 hover:text-white text-[10px] font-bold"
+              >
+                <X className="w-3 h-3 inline mr-0.5" /> Annuler
+              </button>
+              <button
+                onClick={handleSaveNote}
+                className="px-2.5 py-1 rounded btn-y2k-primary text-slate-950 text-[10px] font-bold"
+              >
+                <Check className="w-3 h-3 inline mr-0.5" /> Enregistrer l'avis
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Display User Note (if not editing and note exists) */}
+        {!isEditingNote && movie.userNote && (
+          <div className="p-2 rounded bg-[#070e1a] border-l-2 border-amber-400 text-[11px] text-amber-200/90 italic">
+            « {movie.userNote} »
+          </div>
+        )}
       </div>
     </div>
   );

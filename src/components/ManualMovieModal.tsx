@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Country, Movie } from '../types';
 
-import { Plus, X, Film, Check } from 'lucide-react';
+import { X, Check, Disc } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ManualMovieModalProps {
@@ -64,11 +64,15 @@ export const ManualMovieModal: React.FC<ManualMovieModalProps> = ({
 
     onAddMovie(manualMovie, selectedCountryCodes);
 
-    confetti({
-      particleCount: 60,
-      spread: 60,
-      origin: { y: 0.6 }
-    });
+    try {
+      confetti({
+        particleCount: 60,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+    } catch {
+      // Confetti fallback
+    }
 
     handleClose();
   };
@@ -92,153 +96,135 @@ export const ManualMovieModal: React.FC<ManualMovieModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden my-8 p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
-              <Film className="w-5 h-5" />
-            </div>
-            <h3 className="text-lg font-bold text-white m-0">
-              Ajout manuel d'un film
-            </h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-[#0d1724] border-2 border-[#1e3a8a] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.9)] overflow-hidden my-6 flex flex-col max-h-[90vh]">
+        {/* Retro Window Titlebar */}
+        <div className="window-titlebar px-4 py-2 flex items-center justify-between select-none">
+          <div className="flex items-center space-x-2 text-white font-bold text-xs uppercase tracking-wider font-sans">
+            <Disc className="w-4 h-4 text-amber-300 animate-spin" />
+            <span>Ajout Manuel d'un Film</span>
           </div>
+
           <button
             onClick={handleClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            className="w-6 h-6 rounded bg-red-600 hover:bg-red-500 text-white font-black text-xs flex items-center justify-center border-t border-l border-red-300 border-b-2 border-r-2 border-red-950 shadow-sm"
           >
-            <X className="w-5 h-5" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Titre du film *
-            </label>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 overflow-y-auto space-y-3">
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-slate-300">Titre du film *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Le Fabuleux Destin d'Amélie Poulain"
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
+              placeholder="ex: La Grande Illusion"
+              className="w-full px-3 py-1.5 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Année de sortie
-              </label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold uppercase text-slate-300">Année de sortie</label>
               <input
                 type="text"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                placeholder="Ex: 2001"
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
+                placeholder="ex: 1937"
+                className="w-full px-3 py-1.5 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Genre
-              </label>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold uppercase text-slate-300">Réalisateur(trice)</label>
+              <input
+                type="text"
+                value={director}
+                onChange={(e) => setDirector(e.target.value)}
+                placeholder="ex: Jean Renoir"
+                className="w-full px-3 py-1.5 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold uppercase text-slate-300">Genre(s)</label>
               <input
                 type="text"
                 value={genre}
                 onChange={(e) => setGenre(e.target.value)}
-                placeholder="Ex: Drame, Comédie"
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
+                placeholder="ex: Drame, Guerre"
+                className="w-full px-3 py-1.5 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold uppercase text-slate-300">URL de l'affiche</label>
+              <input
+                type="url"
+                value={poster}
+                onChange={(e) => setPoster(e.target.value)}
+                placeholder="https://..."
+                className="w-full px-3 py-1.5 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Réalisateur(trice)
-            </label>
-            <input
-              type="text"
-              value={director}
-              onChange={(e) => setDirector(e.target.value)}
-              placeholder="Ex: Jean-Pierre Jeunet"
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              URL de l'affiche (optionnel)
-            </label>
-            <input
-              type="url"
-              value={poster}
-              onChange={(e) => setPoster(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
-            />
-          </div>
-
           {/* Country Selection */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Pays associé(s) * (co-productions possibles)
+          <div className="space-y-1 bg-[#070e1a] p-2.5 rounded border border-[#1e3a8a]">
+            <label className="text-[11px] font-bold uppercase text-amber-300">
+              Pays associé(s) * ({selectedCountryCodes.length})
             </label>
-            <div className="max-h-36 overflow-y-auto p-2 bg-slate-950 border border-slate-700 rounded-xl space-y-1">
-              {allCountries
-                .slice()
-                .sort((a, b) => a.frenchName.localeCompare(b.frenchName))
-                .map((c) => {
-                  const isChecked = selectedCountryCodes.includes(c.code);
-                  return (
-                    <div
-                      key={c.code}
-                      onClick={() => handleToggleCountry(c.code)}
-                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
-                        isChecked
-                          ? 'bg-amber-500/20 text-amber-300 font-semibold'
-                          : 'hover:bg-slate-800 text-slate-300'
-                      }`}
-                    >
-                      <span className="flex items-center space-x-2">
-                        <span>{c.flag}</span>
-                        <span>{c.frenchName}</span>
-                        <span className="text-slate-500 text-[10px]">({c.continent})</span>
-                      </span>
-                      {isChecked && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                    </div>
-                  );
-                })}
+            <div className="max-h-28 overflow-y-auto p-1.5 bg-[#030712] rounded border border-[#1e293b] grid grid-cols-2 gap-1 text-[11px]">
+              {allCountries.map((country) => {
+                const isSelected = selectedCountryCodes.includes(country.code);
+                return (
+                  <button
+                    key={country.code}
+                    type="button"
+                    onClick={() => handleToggleCountry(country.code)}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded text-left truncate transition-colors ${
+                      isSelected
+                        ? 'bg-amber-500 text-slate-950 font-bold'
+                        : 'text-slate-300 hover:bg-[#162740]'
+                    }`}
+                  >
+                    <span>{country.flag}</span>
+                    <span className="truncate">{country.frenchName}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Notes / Commentaire personnel
-            </label>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-slate-300">Notes / Critique (optionnel)</label>
             <textarea
               rows={2}
               value={userNote}
               onChange={(e) => setUserNote(e.target.value)}
-              placeholder="Vos impressions..."
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-amber-500"
+              placeholder="Votre avis sur le film..."
+              className="w-full px-3 py-1.5 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner resize-none"
             />
           </div>
 
-          <div className="flex items-center justify-end space-x-3 pt-2">
+          <div className="flex justify-end space-x-2 pt-2 border-t border-[#1e293b]">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              className="px-3 py-1.5 rounded btn-y2k-secondary text-xs"
             >
-              Annuler
+              [ Annuler ]
             </button>
             <button
               type="submit"
-              className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20"
+              className="px-4 py-1.5 rounded btn-y2k-primary text-xs flex items-center space-x-1"
             >
-              <Plus className="w-4 h-4" />
-              <span>Ajouter le film</span>
+              <Check className="w-3.5 h-3.5" />
+              <span>[ Enregistrer le film ]</span>
             </button>
           </div>
         </form>

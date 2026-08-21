@@ -11,10 +11,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Film,
   Sparkles,
   Settings,
-  Database
+  Database,
+  Disc
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -77,7 +77,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     }
 
     setStoredSupabaseConfig(trimmedUrl, trimmedKey);
-    setSuccessMessage('Configuration enregistrée ! Rechargement en cours...');
+    setSuccessMessage('Configuration enregistrée ! Rechargement de la page...');
     setTimeout(() => {
       window.location.reload();
     }, 800);
@@ -96,7 +96,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           if (error.message.includes('Invalid login credentials')) {
             setErrorMessage('Email ou mot de passe incorrect.');
           } else if (error.message.includes('Email not confirmed')) {
-            setErrorMessage('Veuillez confirmer votre email avant de vous connecter (vérifiez vos spams).');
+            setErrorMessage('Veuillez confirmer votre email avant de vous connecter.');
           } else {
             setErrorMessage(error.message || 'Erreur lors de la connexion.');
           }
@@ -128,12 +128,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             setErrorMessage('Cet email est déjà enregistré.');
           } else {
             setSuccessMessage(
-              'Compte créé avec succès ! Si la confirmation par email est activée sur Supabase, vérifiez vos emails.'
+              'Compte créé avec succès ! Connexion en cours...'
             );
             setTimeout(() => {
               onSuccess?.();
               onClose();
-            }, 2000);
+            }, 1200);
           }
         }
       } else if (tab === 'forgot_password') {
@@ -167,109 +167,101 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header with Cinema branding */}
-        <div className="relative p-6 bg-gradient-to-br from-amber-500/15 via-slate-900 to-slate-900 border-b border-slate-800/80 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Film className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-100 flex items-center gap-1.5">
-                {tab === 'login' && 'Connexion'}
-                {tab === 'register' && 'Créer un compte'}
-                {tab === 'forgot_password' && 'Mot de passe oublié'}
-                {tab === 'config' && 'Configuration Supabase'}
-              </h2>
-              <p className="text-xs text-slate-400">
-                {tab === 'login' && 'Synchronisez vos films et accédez-y de partout'}
-                {tab === 'register' && 'Démarrez votre carnet de voyage cinématographique'}
-                {tab === 'forgot_password' && 'Recevez un lien par email pour réinitialiser votre accès'}
-                {tab === 'config' && 'Connectez votre base de données Cloud en 10 secondes'}
-              </p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-[#0d1724] border-2 border-[#1e3a8a] w-full max-w-md rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Retro 2000s Window Titlebar */}
+        <div className="window-titlebar px-4 py-2.5 flex items-center justify-between select-none">
+          <div className="flex items-center space-x-2 text-white font-bold text-xs uppercase tracking-wider font-sans">
+            <Disc className="w-4 h-4 text-amber-300 animate-spin" />
+            <span>
+              {tab === 'login' && 'Espace Membre - Connexion'}
+              {tab === 'register' && 'Espace Membre - Inscription'}
+              {tab === 'forgot_password' && 'Récupération de mot de passe'}
+              {tab === 'config' && 'Configuration Base de Données Cloud'}
+            </span>
           </div>
+
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 p-2 rounded-lg hover:bg-slate-800/60 transition-colors"
+            className="w-6 h-6 rounded bg-red-600 hover:bg-red-500 text-white font-black text-xs flex items-center justify-center border-t border-l border-red-300 border-b-2 border-r-2 border-red-950 shadow-sm"
+            title="Fermer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Tabs switcher */}
-        <div className="flex border-b border-slate-800 bg-slate-950/40 p-1 gap-1">
+        {/* Tabs Switcher 2000s Style */}
+        <div className="flex bg-[#050b14] p-1.5 gap-1 border-b border-[#1e293b]">
           <button
             onClick={() => handleTabChange('login')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center space-x-1.5 ${
+            className={`flex-1 py-1.5 text-xs font-bold rounded transition-all flex items-center justify-center space-x-1 ${
               tab === 'login'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'btn-y2k-primary text-slate-950'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
-            <span>Se connecter</span>
+            <span>[ Connexion ]</span>
           </button>
           <button
             onClick={() => handleTabChange('register')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center space-x-1.5 ${
+            className={`flex-1 py-1.5 text-xs font-bold rounded transition-all flex items-center justify-center space-x-1 ${
               tab === 'register'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'btn-y2k-primary text-slate-950'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>S'inscrire</span>
+            <span>[ Inscription ]</span>
           </button>
           <button
             onClick={() => handleTabChange('config')}
-            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center space-x-1.5 ${
+            className={`px-2.5 py-1.5 text-xs font-bold rounded transition-all flex items-center justify-center space-x-1 ${
               tab === 'config'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                ? 'btn-y2k-primary text-slate-950'
                 : !isConfigured
-                ? 'text-amber-400 bg-amber-500/10 border border-amber-500/30 animate-pulse'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Configurer les clés Supabase"
+            title="Configuration Cloud"
           >
             <Settings className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Clés Cloud</span>
+            <span className="hidden sm:inline">Clés</span>
           </button>
         </div>
 
-        {/* Modal Body & Form */}
-        <div className="p-6 overflow-y-auto space-y-4">
+        {/* Modal Body */}
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
           {/* Alerts */}
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start space-x-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="flex-1">{errorMessage}</div>
+            <div className="p-2.5 rounded bg-red-950/80 border border-red-500/50 text-red-200 text-xs flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{errorMessage}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start space-x-2.5">
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="flex-1">{successMessage}</div>
+            <div className="p-2.5 rounded bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-xs flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{successMessage}</span>
             </div>
           )}
 
           {/* Direct Supabase Keys Form */}
           {tab === 'config' ? (
-            <form onSubmit={handleSaveConfig} className="space-y-4">
-              <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-200 space-y-1.5">
-                <p className="font-semibold text-amber-300 m-0 flex items-center gap-1.5">
+            <form onSubmit={handleSaveConfig} className="space-y-3">
+              <div className="p-3 bg-[#070e1a] border border-[#1e3a8a] rounded text-xs text-amber-200 space-y-1">
+                <p className="font-bold text-amber-300 m-0 flex items-center gap-1.5">
                   <Database className="w-4 h-4" />
-                  Connexion directe à votre projet Supabase
+                  Connexion directe Supabase PostgreSQL
                 </p>
-                <p className="text-slate-300 m-0 leading-relaxed text-[11px]">
-                  Collez simplement votre <strong>Project URL</strong> et votre <strong>Anon Public Key</strong> depuis votre tableau de bord Supabase (<em>Project Settings &gt; API</em>) :
+                <p className="text-slate-400 m-0 text-[11px]">
+                  Collez vos identifiants Supabase (<em>Project Settings &gt; API</em>) :
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase text-slate-300">
                   URL Supabase (Project URL)
                 </label>
                 <input
@@ -277,13 +269,13 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                   required
                   value={customUrl}
                   onChange={(e) => setCustomUrl(e.target.value)}
-                  placeholder="https://abcdefghijklmnopqrst.supabase.co"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-xs font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                  placeholder="https://xxxxxxxxxxxxxxxxxxxx.supabase.co"
+                  className="w-full px-3 py-2 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs font-mono focus:outline-none focus:border-amber-400 font-sans"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase text-slate-300">
                   Clé Publique Anon (Project API Key)
                 </label>
                 <input
@@ -292,40 +284,24 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                   value={customKey}
                   onChange={(e) => setCustomKey(e.target.value)}
                   placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-xs font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                  className="w-full px-3 py-2 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs font-mono focus:outline-none focus:border-amber-400 font-sans"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all"
+                className="w-full py-2 px-4 rounded btn-y2k-primary text-xs flex items-center justify-center space-x-1.5 mt-2"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Enregistrer et activer le Cloud</span>
+                <span>[ Enregistrer &amp; Activer le Cloud ]</span>
               </button>
             </form>
           ) : (
             /* Login / Register / Forgot Password Form */
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* If not configured, show quick prompt */}
-              {!isConfigured && (
-                <div
-                  onClick={() => setTab('config')}
-                  className="p-3 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/30 rounded-xl text-xs text-amber-300 cursor-pointer flex items-center justify-between transition-all"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
-                    <span>Cliquez ici pour coller vos clés Supabase</span>
-                  </span>
-                  <span className="text-[10px] font-bold uppercase bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40">
-                    Configurer
-                  </span>
-                </div>
-              )}
-
+            <form onSubmit={handleSubmit} className="space-y-3">
               {/* Email Field */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase text-slate-300 flex items-center space-x-1">
                   <Mail className="w-3.5 h-3.5 text-amber-400" />
                   <span>Adresse Email</span>
                 </label>
@@ -335,15 +311,15 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="votre.email@exemple.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                  className="w-full px-3 py-2 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
                 />
               </div>
 
-              {/* Password Field (for login / register) */}
+              {/* Password Field */}
               {tab !== 'forgot_password' && (
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+                    <label className="text-[11px] font-bold uppercase text-slate-300 flex items-center space-x-1">
                       <Lock className="w-3.5 h-3.5 text-amber-400" />
                       <span>Mot de passe</span>
                     </label>
@@ -351,7 +327,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                       <button
                         type="button"
                         onClick={() => handleTabChange('forgot_password')}
-                        className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                        className="text-[10px] text-amber-400 hover:underline"
                       >
                         Oublié ?
                       </button>
@@ -363,15 +339,15 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                    className="w-full px-3 py-2 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
                   />
                 </div>
               )}
 
               {/* Confirm Password (only for register) */}
               {tab === 'register' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase text-slate-300 flex items-center space-x-1">
                     <Lock className="w-3.5 h-3.5 text-amber-400" />
                     <span>Confirmer le mot de passe</span>
                   </label>
@@ -381,7 +357,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                    className="w-full px-3 py-2 bg-[#050b14] border-2 border-[#1e3a8a] rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans shadow-inner"
                   />
                 </div>
               )}
@@ -390,12 +366,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
               <button
                 type="submit"
                 disabled={isLoading || !isConfigured}
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all"
+                className="w-full py-2.5 px-4 rounded btn-y2k-primary text-xs flex items-center justify-center space-x-1.5 disabled:opacity-50 mt-3"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Traitement en cours...</span>
+                    <span>Vérification...</span>
                   </>
                 ) : (
                   <>
@@ -403,9 +379,9 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     {tab === 'register' && <UserPlus className="w-4 h-4" />}
                     {tab === 'forgot_password' && <KeyRound className="w-4 h-4" />}
                     <span>
-                      {tab === 'login' && 'Se connecter'}
-                      {tab === 'register' && 'Créer mon compte'}
-                      {tab === 'forgot_password' && 'Envoyer le lien de réinitialisation'}
+                      {tab === 'login' && '[ Se connecter ]'}
+                      {tab === 'register' && '[ Créer mon compte ]'}
+                      {tab === 'forgot_password' && '[ Réinitialiser ]'}
                     </span>
                   </>
                 )}
@@ -415,21 +391,14 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
           {/* Social Google Login */}
           {tab !== 'config' && tab !== 'forgot_password' && isConfigured && (
-            <div className="space-y-3 pt-2">
-              <div className="relative flex items-center justify-center">
-                <div className="border-t border-slate-800 w-full"></div>
-                <span className="bg-slate-900 px-3 text-xs text-slate-500 font-medium uppercase tracking-wider">
-                  ou
-                </span>
-              </div>
-
+            <div className="space-y-2 pt-2 border-t border-[#1e293b]">
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-medium text-xs flex items-center justify-center space-x-2.5 transition-all shadow-sm"
+                className="w-full py-2 px-3 rounded btn-y2k-secondary text-xs flex items-center justify-center space-x-2"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -447,21 +416,20 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span>Continuer avec Google</span>
+                <span>[ Continuer avec Google ]</span>
               </button>
             </div>
           )}
 
           {/* Benefits summary */}
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5 text-[11px] text-slate-400">
-            <div className="flex items-center space-x-1.5 text-amber-400 font-semibold">
+          <div className="p-2.5 rounded bg-[#070e1a] border border-[#1e293b] text-[11px] text-slate-400 space-y-1">
+            <div className="flex items-center space-x-1 text-amber-400 font-bold uppercase">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Avantages du Cloud WorldWideMovie</span>
+              <span>Avantages Compte Cloud</span>
             </div>
-            <p className="m-0 leading-relaxed">
-              • Sauvegarde automatique dans le Cloud (PostgreSQL)<br />
-              • Retrouvez vos films sur n'importe quel ordinateur ou smartphone<br />
-              • Vos données restent privées et sécurisées
+            <p className="m-0 leading-relaxed text-[10px]">
+              • Vos films sauvegardés et synchronisés sur smartphone &amp; PC.<br />
+              • Espace 100% privé et sécurisé.
             </p>
           </div>
         </div>

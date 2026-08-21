@@ -25,7 +25,7 @@ import { MovieSearchModal } from './components/MovieSearchModal';
 import { ManualMovieModal } from './components/ManualMovieModal';
 import { RandomCountryModal } from './components/RandomCountryModal';
 import { AuthModal } from './components/AuthModal';
-import { Film, CloudUpload, Loader2, Sparkles } from 'lucide-react';
+import { Film, CloudUpload, Loader2, Sparkles, Disc } from 'lucide-react';
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
@@ -230,12 +230,9 @@ export default function App() {
   };
 
   const totalUniqueMovies = Object.keys(userData.movies).length;
-  const watchedCountriesCount = Object.keys(userData.countryMovies).filter(
-    (code) => (userData.countryMovies[code] || []).length > 0
-  ).length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       {/* Top Navigation */}
       <Navbar
         onOpenSearch={() => {
@@ -263,26 +260,37 @@ export default function App() {
             alert('Erreur lors de l\'import du fichier JSON.');
           }
         }}
-        totalWatchedCountries={watchedCountriesCount}
-        totalCountriesCount={countries.length}
       />
 
+      {/* Retro Cinema Marquee Ticker Bar */}
+      <div className="bg-[#050b14] border-b border-[#1e293b] py-1 px-4 overflow-hidden shadow-inner select-none">
+        <div className="max-w-7xl mx-auto flex items-center space-x-2 text-[11px] font-mono text-amber-300">
+          <span className="font-black px-1.5 py-0.2 bg-amber-500 text-slate-950 rounded uppercase text-[10px] shrink-0">
+            FLASH CINÉ
+          </span>
+          <div className="overflow-hidden whitespace-nowrap flex-1">
+            <span className="animate-marquee">
+              ★★★ BIENVENUE SUR WORLDWIDE MOVIE • ÉDITION 2000s • OBJECTIF : 1 FILM POUR CHAQUE PAYS DU MONDE • MÉTADONNÉES ET AFFICHES OFFICIELLES TMDB • ENREGISTREZ VOS AVIS ET DÉCOUVREZ LE MONDE DU 7ÈME ART ★★★
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Main Body Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 space-y-5">
         {/* Migration banner if user has un-synced local data */}
         {user && hasLocalDataToMigrate && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-transparent border border-emerald-500/30 text-emerald-200 shadow-lg shadow-emerald-500/5">
+          <div className="box-y2k rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-2 border-emerald-500/50">
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+              <div className="p-2 rounded bg-emerald-950 border border-emerald-500/50 text-emerald-400">
                 <CloudUpload className="w-5 h-5" />
               </div>
-              <div className="text-xs sm:text-sm">
-                <p className="font-bold text-emerald-300 m-0 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" />
-                  Synchronisation disponible
+              <div className="text-xs">
+                <p className="font-black text-emerald-300 m-0 uppercase tracking-wide">
+                  ★ Synchronisation Cloud Disponible ★
                 </p>
-                <p className="text-slate-300 m-0 text-xs">
-                  Des films ont été trouvés sur cet appareil. Souhaitez-vous les transférer sur votre compte Cloud ?
+                <p className="text-slate-300 m-0 text-[11px]">
+                  Des films locaux ont été trouvés. Souhaitez-vous les transférer sur votre compte Cloud ?
                 </p>
               </div>
             </div>
@@ -290,7 +298,7 @@ export default function App() {
               <button
                 onClick={handleMigrateLocalData}
                 disabled={isMigrating}
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center space-x-1.5 disabled:opacity-50"
+                className="px-3 py-1.5 rounded btn-y2k-primary text-xs flex items-center space-x-1"
               >
                 {isMigrating ? (
                   <>
@@ -300,15 +308,15 @@ export default function App() {
                 ) : (
                   <>
                     <CloudUpload className="w-3.5 h-3.5" />
-                    <span>Synchroniser sur mon compte</span>
+                    <span>[ Transférer sur mon compte ]</span>
                   </>
                 )}
               </button>
               <button
                 onClick={() => setHasLocalDataToMigrate(false)}
-                className="px-2.5 py-2 text-xs text-slate-400 hover:text-slate-200"
+                className="px-2 py-1 text-xs text-slate-400 hover:text-white"
               >
-                Ignorer
+                [ Ignorer ]
               </button>
             </div>
           </div>
@@ -316,7 +324,7 @@ export default function App() {
 
         {/* Migration Success alert */}
         {migrationSuccess && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2">
+          <div className="p-3 rounded-lg bg-emerald-950/90 border-2 border-emerald-500 text-emerald-200 text-xs flex items-center space-x-2 font-bold">
             <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{migrationSuccess}</span>
           </div>
@@ -324,25 +332,25 @@ export default function App() {
 
         {/* Guest Mode Banner (if not logged in) */}
         {!user && !authLoading && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 text-slate-300">
+          <div className="box-y2k rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-2 border-[#1e3a8a]">
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="p-2 rounded bg-[#0a1424] border border-[#1e3a8a] text-amber-400">
                 <Film className="w-5 h-5" />
               </div>
-              <div className="text-xs sm:text-sm">
-                <p className="font-semibold text-slate-200 m-0">
-                  Mode invité (stockage local sur ce navigateur)
+              <div className="text-xs">
+                <p className="font-black text-amber-300 m-0 uppercase tracking-wide">
+                  ★ Mode Invité (Stockage Local sur ce Navigateur) ★
                 </p>
-                <p className="text-slate-400 m-0 text-xs">
-                  Connectez-vous pour retrouver vos films sur tous vos appareils (PC, mobile) et sécuriser votre progression.
+                <p className="text-slate-300 m-0 text-[11px]">
+                  Créez un compte gratuit pour synchroniser vos films sur votre smartphone et vos autres ordinateurs.
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsAuthOpen(true)}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-amber-500/50 text-slate-100 font-semibold text-xs transition-all shrink-0"
+              className="px-3.5 py-1.5 rounded btn-y2k-secondary text-xs font-bold text-amber-300 shrink-0"
             >
-              Se connecter / S'inscrire
+              [ Se connecter / S'inscrire ]
             </button>
           </div>
         )}
@@ -358,9 +366,9 @@ export default function App() {
 
         {/* Country Explorer & Movie List */}
         {isLoadingData ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-3 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 space-y-2 text-slate-400">
             <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-            <p className="text-sm">Chargement de votre collection de films...</p>
+            <p className="text-xs font-bold uppercase tracking-wider">Chargement de votre collection...</p>
           </div>
         ) : (
           <CountryList
@@ -407,18 +415,36 @@ export default function App() {
         onSelectCountryToSearch={handleSelectRandomCountry}
       />
 
-      {/* Footer */}
-      <footer className="mt-16 border-t border-slate-800/80 bg-slate-950/80 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center space-y-2 text-xs text-slate-500">
-          <div className="flex items-center justify-center space-x-2 text-slate-400">
-            <Film className="w-4 h-4 text-amber-400" />
-            <span className="font-semibold text-slate-300">WorldWideMovie</span>
+      {/* 2000s Retro Web Footer */}
+      <footer className="mt-12 border-t-2 border-[#1e3a8a] bg-[#070e1a] py-6 select-none">
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-2 text-xs text-slate-400 font-sans">
+          <div className="flex flex-wrap items-center justify-center gap-2 text-slate-300 font-bold uppercase text-[11px]">
+            <span className="text-amber-400 flex items-center gap-1">
+              <Disc className="w-3.5 h-3.5 animate-spin" />
+              WORLDWIDE MOVIE
+            </span>
             <span>•</span>
-            <span>Tour du monde du 7ème art</span>
+            <span>Édition Web 2000</span>
+            <span>•</span>
+            <span>1 Film par Pays</span>
           </div>
-          <p className="m-0">
+
+          <p className="m-0 text-[10px] text-slate-500">
             Données pays propulsées par REST Countries • Métadonnées cinématographiques fournies par The Movie Database (TMDB).
           </p>
+
+          {/* Retro Web Badges 2000s style */}
+          <div className="flex items-center justify-center gap-2 pt-2 text-[9px] font-mono">
+            <span className="px-1.5 py-0.5 rounded bg-[#030712] border border-[#1e3a8a] text-slate-400">
+              [ BEST VIEWED IN 1024x768 ]
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-[#030712] border border-[#1e3a8a] text-amber-300">
+              [ VALID HTML 4.01 ]
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-[#030712] border border-[#1e3a8a] text-emerald-300">
+              [ SUPABASE READY ]
+            </span>
+          </div>
         </div>
       </footer>
     </div>
