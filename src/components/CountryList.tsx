@@ -2,8 +2,13 @@ import React, { useState, useMemo } from 'react';
 import type { Continent, Country, Movie } from '../types';
 import { CONTINENTS_ORDER, CONTINENT_ICONS } from '../data/countriesData';
 import { CountryCard } from './CountryCard';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
-
+import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  ChevronsDown,
+  ChevronsUp
+} from 'lucide-react';
 
 interface CountryListProps {
   countries: Country[];
@@ -91,12 +96,38 @@ export const CountryList: React.FC<CountryListProps> = ({
     return groups;
   }, [filteredCountries, selectedContinent]);
 
+  // Check if all visible continents are currently collapsed
+  const areAllCollapsed = useMemo(() => {
+    if (groupedContinents.length === 0) return false;
+    return groupedContinents.every(({ continent }) => Boolean(collapsedContinents[continent]));
+  }, [groupedContinents, collapsedContinents]);
+
+  const handleCollapseAll = () => {
+    const allCollapsed: Record<string, boolean> = {};
+    groupedContinents.forEach(({ continent }) => {
+      allCollapsed[continent] = true;
+    });
+    setCollapsedContinents(allCollapsed);
+  };
+
+  const handleExpandAll = () => {
+    setCollapsedContinents({});
+  };
+
+  const handleToggleCollapseAll = () => {
+    if (areAllCollapsed) {
+      handleExpandAll();
+    } else {
+      handleCollapseAll();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Controls & Filter Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 shadow-md">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 shadow-md">
         {/* Search input for countries */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -107,38 +138,63 @@ export const CountryList: React.FC<CountryListProps> = ({
           />
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex items-center space-x-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800 self-start md:self-auto">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              statusFilter === 'all'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Tous ({countries.length})
-          </button>
-          <button
-            onClick={() => setStatusFilter('watched')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              statusFilter === 'watched'
-                ? 'bg-emerald-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Vus ✅
-          </button>
-          <button
-            onClick={() => setStatusFilter('unwatched')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              statusFilter === 'unwatched'
-                ? 'bg-slate-700 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            À découvrir 🎯
-          </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Status Filter Tabs */}
+          <div className="flex items-center space-x-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                statusFilter === 'all'
+                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Tous ({countries.length})
+            </button>
+            <button
+              onClick={() => setStatusFilter('watched')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                statusFilter === 'watched'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Vus ✅
+            </button>
+            <button
+              onClick={() => setStatusFilter('unwatched')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                statusFilter === 'unwatched'
+                  ? 'bg-slate-700 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              À découvrir 🎯
+            </button>
+          </div>
+
+          {/* Quick Expand / Collapse All Continents button */}
+          {groupedContinents.length > 1 && (
+            <div className="flex items-center bg-slate-950/80 p-1 rounded-xl border border-slate-800 space-x-1">
+              <button
+                onClick={handleToggleCollapseAll}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-amber-400 text-xs font-semibold transition-all border border-slate-700/60 shadow-sm"
+                title={areAllCollapsed ? 'Déplier tous les continents' : 'Replier tous les continents'}
+              >
+                {areAllCollapsed ? (
+                  <>
+                    <ChevronsDown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Tout déplier</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronsUp className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Tout replier</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -195,9 +251,9 @@ export const CountryList: React.FC<CountryListProps> = ({
                     </span>
                     <button className="p-1 text-slate-400 group-hover:text-white">
                       {isCollapsed ? (
-                        <ChevronDown className="w-5 h-5" />
+                        <ChevronDown className="w-5 h-5 text-amber-400" />
                       ) : (
-                        <ChevronUp className="w-5 h-5" />
+                        <ChevronUp className="w-5 h-5 text-slate-400" />
                       )}
                     </button>
                   </div>
@@ -205,7 +261,7 @@ export const CountryList: React.FC<CountryListProps> = ({
 
                 {/* Countries List */}
                 {!isCollapsed && (
-                  <div className="grid grid-cols-1 gap-4 pl-0 sm:pl-2">
+                  <div className="grid grid-cols-1 gap-4 pl-0 sm:pl-2 animate-fade-in">
                     {list.map((country) => {
                       const movieIds = userData.countryMovies[country.code] || [];
                       const countryMoviesList = movieIds
