@@ -9,7 +9,9 @@ import {
   User as UserIcon,
   LogOut,
   Cloud,
-  ChevronDown
+  ChevronDown,
+  MoreVertical,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -37,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { user, signOut, loading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isGuestMenuOpen, setIsGuestMenuOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,32 +134,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Manuel</span>
             </button>
 
-            {/* Export & Import */}
-            <div className="hidden sm:flex items-center space-x-1 bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
-              <button
-                onClick={onExport}
-                className="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors"
-                title="Exporter ma collection (JSON)"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors"
-                title="Importer une sauvegarde (JSON)"
-              >
-                <Upload className="w-4 h-4" />
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept=".json"
-                className="hidden"
-              />
-            </div>
+            {/* Hidden file input for JSON import */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".json"
+              className="hidden"
+            />
 
-            {/* User Auth Section */}
+            {/* User Auth Section with Dropdown Menu */}
             {!loading && (
               <div className="relative">
                 {user ? (
@@ -175,15 +162,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                     </button>
 
-                    {/* Dropdown Menu */}
+                    {/* Authenticated Dropdown Menu */}
                     {isUserMenuOpen && (
                       <>
                         <div
                           className="fixed inset-0 z-40"
                           onClick={() => setIsUserMenuOpen(false)}
                         />
-                        <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-2 space-y-1 animate-fade-in">
-                          <div className="px-3 py-2 border-b border-slate-800/80">
+                        <div className="absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-2 space-y-1 animate-fade-in divide-y divide-slate-800/80">
+                          {/* User Header */}
+                          <div className="px-3 py-2">
                             <div className="flex items-center space-x-1.5 text-emerald-400 text-[11px] font-medium mb-1">
                               <Cloud className="w-3.5 h-3.5" />
                               <span>Cloud Supabase actif</span>
@@ -193,25 +181,114 @@ export const Navbar: React.FC<NavbarProps> = ({
                             </p>
                           </div>
 
-                          <button
-                            onClick={handleSignOut}
-                            className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors font-medium"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Se déconnecter</span>
-                          </button>
+                          {/* Data backup options */}
+                          <div className="py-1 space-y-0.5">
+                            <button
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                onExport();
+                              }}
+                              className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left"
+                            >
+                              <Download className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span>Exporter ma collection (JSON)</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                fileInputRef.current?.click();
+                              }}
+                              className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left"
+                            >
+                              <Upload className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span>Importer une sauvegarde (JSON)</span>
+                            </button>
+                          </div>
+
+                          {/* Logout */}
+                          <div className="pt-1">
+                            <button
+                              onClick={handleSignOut}
+                              className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors font-medium text-left"
+                            >
+                              <LogOut className="w-4 h-4 shrink-0" />
+                              <span>Se déconnecter</span>
+                            </button>
+                          </div>
                         </div>
                       </>
                     )}
                   </div>
                 ) : (
-                  <button
-                    onClick={onOpenAuthModal}
-                    className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition-all"
-                  >
-                    <UserIcon className="w-4 h-4" />
-                    <span>Connexion</span>
-                  </button>
+                  <div className="flex items-center space-x-1.5">
+                    {/* Login / Signup button */}
+                    <button
+                      onClick={onOpenAuthModal}
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition-all"
+                    >
+                      <UserIcon className="w-4 h-4" />
+                      <span>Connexion</span>
+                    </button>
+
+                    {/* Guest actions dropdown (options & backup) */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsGuestMenuOpen(!isGuestMenuOpen)}
+                        className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                        title="Options et sauvegardes"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {isGuestMenuOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setIsGuestMenuOpen(false)}
+                          />
+                          <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-2 space-y-1 animate-fade-in">
+                            <div className="px-3 py-1.5 text-[11px] text-slate-400 font-medium border-b border-slate-800">
+                              Sauvegardes locales
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setIsGuestMenuOpen(false);
+                                onExport();
+                              }}
+                              className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left"
+                            >
+                              <Download className="w-4 h-4 text-amber-400" />
+                              <span>Exporter (JSON)</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setIsGuestMenuOpen(false);
+                                fileInputRef.current?.click();
+                              }}
+                              className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left"
+                            >
+                              <Upload className="w-4 h-4 text-amber-400" />
+                              <span>Importer (JSON)</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setIsGuestMenuOpen(false);
+                                onOpenAuthModal();
+                              }}
+                              className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left border-t border-slate-800 pt-2"
+                            >
+                              <Settings className="w-4 h-4 text-amber-400" />
+                              <span>Clés Supabase Cloud</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
