@@ -39,7 +39,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY }}
-          VITE_OMDB_API_KEY: ${{ secrets.VITE_OMDB_API_KEY || vars.VITE_OMDB_API_KEY }}
         run: npm run build
 
       - name: Setup Pages

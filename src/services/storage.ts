@@ -2,29 +2,11 @@ import type { Movie, UserData } from '../types';
 
 
 const STORAGE_KEY = 'worldwidemovie_data_v1';
-const API_KEY_STORAGE = 'worldwidemovie_omdb_key';
 
 const DEFAULT_USER_DATA: UserData = {
   movies: {},
   countryMovies: {}
 };
-
-export function getStoredApiKey(): string {
-  try {
-    return localStorage.getItem(API_KEY_STORAGE) || (import.meta.env.VITE_OMDB_API_KEY as string) || '';
-  } catch {
-    return '';
-  }
-}
-
-
-export function setStoredApiKey(key: string): void {
-  try {
-    localStorage.setItem(API_KEY_STORAGE, key.trim());
-  } catch (e) {
-    console.error('Failed to save API key', e);
-  }
-}
 
 export function loadUserData(): UserData {
   try {

@@ -22,44 +22,11 @@ export interface Movie {
   genre?: string;
   imdbRating?: string;
   runtime?: string;
-  countryRaw: string; // OMDb country string (e.g. "France, Italy, United States")
+  countryRaw: string; // Country string from the provider (e.g. "France, Italy, United States")
   countryCodes: string[]; // List of matched cca2 codes
   addedAt: number;
   userRating?: number; // 1-5
   userNote?: string;
-}
-
-export interface OMDbSearchResult {
-  Title: string;
-  Year: string;
-  imdbID: string;
-  Type: string;
-  Poster: string;
-}
-
-export interface OMDbMovieDetail {
-  Title: string;
-  Year: string;
-  Rated: string;
-  Released: string;
-  Runtime: string;
-  Genre: string;
-  Director: string;
-  Writer: string;
-  Actors: string;
-  Plot: string;
-  Language: string;
-  Country: string;
-  Awards: string;
-  Poster: string;
-  Ratings: { Source: string; Value: string }[];
-  Metascore: string;
-  imdbRating: string;
-  imdbVotes: string;
-  imdbID: string;
-  Type: string;
-  Response: string;
-  Error?: string;
 }
 
 export interface TMDBSearchResult {
@@ -98,7 +65,6 @@ export interface UserData {
   movies: Record<string, Movie>; // Keyed by imdbID
   // Mapping of countryCode -> list of imdbIDs
   countryMovies: Record<string, string[]>;
-  omdbApiKey?: string;
 }
 
 export interface UserMovieRow {
