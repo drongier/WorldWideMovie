@@ -134,8 +134,6 @@ supabase/functions/tmdb-proxy  Edge Function Deno qui masque la clé TMDB
 
 ## Restes à faire
 
-- `src/services/omdbApi.ts`, `src/components/ApiKeyModal.tsx` et la clé OMDb héritée ne sont plus
-  utilisés depuis le passage à TMDB, à supprimer
 - les films dont la production n'est pas identifiable (souvent des coproductions mal renseignées
   dans la base) demandent encore un ajout manuel
 - aucun test automatisé pour l'instant
